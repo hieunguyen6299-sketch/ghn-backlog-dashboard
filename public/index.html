@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHN Backlog KTC Dashboard — LIVE</title>
+    <meta name="description" content="Dashboard theo dõi tồn đọng KTC theo thời gian thực từ API GHN">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="logo-icon">📊</div>
+                <div>
+                    <h1>GHN Backlog KTC Dashboard</h1>
+                    <div class="subtitle">Kho Chuyển Tiếp Đồng Nai (20757000) — <strong style="color: #4ade80;">⚡ LIVE DATA</strong></div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="pulse"></span>
+                    <span id="last-update-time">Đang kết nối...</span>
+                </div>
+                <button class="btn btn-primary" id="btn-crawl-now">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Refresh Live
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Row -->
+        <section class="kpi-row">
+            <div class="kpi-card highlight">
+                <div class="kpi-title">📦 Đơn tại Kho</div>
+                <div class="kpi-value" id="kpi-at-warehouse">--</div>
+                <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Chờ phân loại + Đang phân loại + Chờ xuất + Chờ xuất kiện chuyển tiếp</div>
+            </div>
+            <div class="kpi-card" style="border-left: 3px solid #60a5fa;">
+                <div class="kpi-title">🚛 Đang LC tới Kho</div>
+                <div class="kpi-value" id="kpi-transporting">--</div>
+                <div class="kpi-trend" id="kpi-trend">--</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">24h+ Chờ xuất <span class="badge warning">⚠️</span></div>
+                <div class="kpi-value" id="kpi-24h">--</div>
+                <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Chờ xuất + Chờ xuất kiện chuyển tiếp</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">48h+ Chờ xuất <span class="badge danger">🔴</span></div>
+                <div class="kpi-value" id="kpi-48h">--</div>
+                <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Chờ xuất + Chờ xuất kiện chuyển tiếp</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">72h+ Chờ xuất <span class="badge severe">⛔</span></div>
+                <div class="kpi-value" id="kpi-72h">--</div>
+                <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">Chờ xuất + Chờ xuất kiện chuyển tiếp</div>
+            </div>
+        </section>
+
+        <!-- Charts Grid -->
+        <section class="dashboard-grid">
+            <div class="grid-col-left">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>📊 Breakdown theo phân loại</h2>
+                    </div>
+                    <div class="panel-body">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="grid-col-right">
+                <div class="panel h-full">
+                    <div class="panel-header">
+                        <h2>🔥 Heatmap Backlog (Phân loại × Aging)</h2>
+                    </div>
+                    <div class="panel-body heatmap-container">
+                        <canvas id="heatmapCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tracking Panel: Chờ xuất 24h+ -->
+        <section class="tracking-panel">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>🚨 Theo dõi đơn Chờ xuất quá hạn (24h+)</h2>
+                </div>
+                <div class="tracking-grid">
+                    <!-- Chưa xử lý: 24-72h -->
+                    <div class="tracking-card tracking-pending" id="tracking-pending" onclick="showTrackingDetail('pending')">
+                        <div class="tracking-icon">⚠️</div>
+                        <div class="tracking-info">
+                            <div class="tracking-label">CHƯA XỬ LÝ <span style="font-weight:400; font-size:0.75rem;">(24h → 72h)</span></div>
+                            <div class="tracking-value" id="tracking-pending-count">--</div>
+                            <div class="tracking-sub">
+                                <span id="tracking-pending-cx">Chờ xuất: --</span> • 
+                                <span id="tracking-pending-kct">Chờ xuất KCT: --</span>
+                            </div>
+                        </div>
+                        <div class="tracking-arrow">→</div>
+                    </div>
+
+                    <!-- Đã xử lý: 72h+ -->
+                    <div class="tracking-card tracking-done" id="tracking-done" onclick="showTrackingDetail('done')">
+                        <div class="tracking-icon">✅</div>
+                        <div class="tracking-info">
+                            <div class="tracking-label">ĐÃ XỬ LÝ <span style="font-weight:400; font-size:0.75rem;">(72h+)</span></div>
+                            <div class="tracking-value" id="tracking-done-count">--</div>
+                            <div class="tracking-sub">
+                                <span id="tracking-done-cx">Chờ xuất: --</span> • 
+                                <span id="tracking-done-kct">Chờ xuất KCT: --</span>
+                            </div>
+                            <div style="margin-top:4px; font-size:0.75rem; color:#4ade80;">📧 Đã mail Haraworks</div>
+                        </div>
+                        <div class="tracking-arrow">→</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Table -->
+        <section class="panel table-section">
+            <div class="panel-header flex-between">
+                <h2>📋 Tổng hợp theo phân loại <span style="font-size:0.75rem; color: var(--text-secondary); font-weight:400;">(Click vào dòng để xem chi tiết tỉnh/thành)</span></h2>
+            </div>
+            <div class="table-responsive">
+                <table id="orders-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Phân loại</th>
+                            <th class="text-right">Số lượng đơn hàng</th>
+                            <th class="text-right">Số lượng kiện hàng</th>
+                            <th class="text-right">Tỷ trọng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                        <tr><td colspan="4" class="text-center text-muted">Đang tải dữ liệu live...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Province Detail Modal -->
+        <div id="timeline-overlay" class="overlay hidden">
+            <div class="timeline-panel" style="max-width: 900px;">
+                <div class="timeline-header">
+                    <h3>Chi tiết tỉnh/thành — <span id="timeline-order-code" class="text-primary"></span></h3>
+                    <button class="close-btn" id="btn-close-timeline">&times;</button>
+                </div>
+                <div class="timeline-content" id="timeline-content">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/heatmap.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
