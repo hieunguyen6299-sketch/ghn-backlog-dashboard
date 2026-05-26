@@ -246,15 +246,26 @@ app.get('/api/hr-stats', (req, res) => {
             .map(([manager, count]) => ({ manager, count }))
             .sort((a, b) => b.count - a.count);
         
-        // By shift
-        const byShift = {};
+        // By shift - with turnover rate per shift
+        const totalByShift = {};
+        employees.forEach(e => {
+            const s = e.shiftGroup || 'Không rõ';
+            totalByShift[s] = (totalByShift[s] || 0) + 1;
+        });
+        const resignedByShift = {};
         resigned.forEach(e => {
             const s = e.shiftGroup || 'Không rõ';
-            byShift[s] = (byShift[s] || 0) + 1;
+            resignedByShift[s] = (resignedByShift[s] || 0) + 1;
         });
-        const shiftData = Object.entries(byShift)
-            .map(([shift, count]) => ({ shift, count }))
-            .sort((a, b) => b.count - a.count);
+        const shiftData = Object.keys(totalByShift)
+            .map(shift => {
+                const totalInShift = totalByShift[shift] || 0;
+                const resignedInShift = resignedByShift[shift] || 0;
+                const activeInShift = totalInShift - resignedInShift;
+                const rate = totalInShift > 0 ? ((resignedInShift / totalInShift) * 100).toFixed(1) : '0.0';
+                return { shift, total: totalInShift, resigned: resignedInShift, active: activeInShift, rate: parseFloat(rate) };
+            })
+            .sort((a, b) => b.resigned - a.resigned);
         
         // Recent resignations
         const recent = resigned
