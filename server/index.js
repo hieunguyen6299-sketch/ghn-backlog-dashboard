@@ -130,6 +130,23 @@ function parseHRData() {
         
         if (cols.length < 10) continue;
         
+        const startDate = cols[8] || '';
+        const resignDate = cols[10] || '';
+        let resignTenure = parseInt(cols[11]) || 0;
+        
+        // Auto-calculate resignTenure if column L is empty
+        // = months from startDate to resignDate
+        if (!resignTenure && startDate && resignDate) {
+            const [sd, sm, sy] = startDate.split('/');
+            const [rd, rm, ry] = resignDate.split('/');
+            if (sd && sm && sy && rd && rm && ry) {
+                const start = new Date(parseInt(sy), parseInt(sm) - 1, parseInt(sd));
+                const end = new Date(parseInt(ry), parseInt(rm) - 1, parseInt(rd));
+                resignTenure = Math.round((end - start) / (1000 * 60 * 60 * 24 * 30.44));
+                if (resignTenure < 0) resignTenure = 0;
+            }
+        }
+
         employees.push({
             id: cols[1],
             name: cols[2],
@@ -137,10 +154,10 @@ function parseHRData() {
             title: cols[5],
             department: cols[6],
             warehouse: cols[7],
-            startDate: cols[8],
+            startDate,
             tenure: parseInt(cols[9]) || 0,
-            resignDate: cols[10] || '',
-            resignTenure: parseInt(cols[11]) || 0,
+            resignDate,
+            resignTenure,
             reason: cols[12] || '',
             resignMonth: cols[13] || '',
             shiftGroup: cols[14] || '',
