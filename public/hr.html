@@ -152,44 +152,47 @@
         .reason-tag.other { background: rgba(99,102,241,0.15); color: #a78bfa; }
         /* Month pills */
         .month-pill {
-            padding: 8px 14px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
             color: var(--text-secondary);
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             font-family: Inter, sans-serif;
             cursor: pointer;
             transition: all 0.25s ease;
             text-align: center;
-            min-width: 100px;
+            min-width: 105px;
         }
         .month-pill:hover {
-            background: rgba(99,102,241,0.1);
-            border-color: rgba(99,102,241,0.3);
+            background: rgba(99,102,241,0.15);
+            border-color: rgba(99,102,241,0.4);
             color: var(--text-primary);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .month-pill.active {
-            background: rgba(99,102,241,0.18);
-            border-color: rgba(99,102,241,0.5);
+            background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25));
+            border-color: rgba(99,102,241,0.6);
             color: #fff;
-            box-shadow: 0 0 12px rgba(99,102,241,0.25);
+            box-shadow: 0 0 16px rgba(99,102,241,0.3);
+            transform: translateY(-2px);
         }
         .month-pill .pill-month {
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: var(--text-primary);
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #e2e8f0;
         }
         .month-pill.active .pill-month { color: #fff; }
         .month-pill .pill-count {
-            font-size: 0.7rem;
-            margin-top: 2px;
+            font-size: 0.72rem;
+            margin-top: 3px;
+            color: #94a3b8;
         }
         .month-pill .pill-rate {
-            font-size: 0.72rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            margin-top: 2px;
+            margin-top: 3px;
         }
         .pill-rate.low { color: #34d399; }
         .pill-rate.mid { color: #fbbf24; }
