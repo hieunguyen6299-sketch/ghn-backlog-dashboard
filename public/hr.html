@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhân Sự KCT Đồng Nai — Tỷ lệ nghỉ việc</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        .hr-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .hr-nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        .hr-nav a:hover {
+            background: rgba(99,102,241,0.15);
+            border-color: rgba(99,102,241,0.4);
+            color: var(--text-primary);
+        }
+        .hr-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .hr-kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--bg-panel-border);
+            border-radius: 14px;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .hr-kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 14px 14px 0 0;
+        }
+        .hr-kpi-card:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .hr-kpi-card:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .hr-kpi-card:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .hr-kpi-card:nth-child(4)::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .hr-kpi-card:nth-child(5)::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .hr-kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .hr-kpi-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        .hr-kpi-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            animation: countUp 0.4s ease-out;
+        }
+        .hr-kpi-card:nth-child(1) .hr-kpi-value { color: #60a5fa; }
+        .hr-kpi-card:nth-child(2) .hr-kpi-value { color: #34d399; }
+        .hr-kpi-card:nth-child(3) .hr-kpi-value { color: #fbbf24; }
+        .hr-kpi-card:nth-child(4) .hr-kpi-value { color: #f87171; }
+        .hr-kpi-card:nth-child(5) .hr-kpi-value { color: #a78bfa; }
+        .hr-kpi-sub {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--bg-panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .chart-panel h3 {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+        .chart-panel.full-width {
+            grid-column: 1 / -1;
+        }
+        /* Recent table */
+        .hr-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .hr-table th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-weight: 600;
+        }
+        .hr-table td {
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .hr-table tr:hover td {
+            background: rgba(99,102,241,0.06);
+        }
+        .reason-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+        .reason-tag.voluntary { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .reason-tag.fired { background: rgba(239,68,68,0.15); color: #f87171; }
+        .reason-tag.other { background: rgba(99,102,241,0.15); color: #a78bfa; }
+        /* Month pills */
+        .month-pill {
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-family: Inter, sans-serif;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+            min-width: 100px;
+        }
+        .month-pill:hover {
+            background: rgba(99,102,241,0.1);
+            border-color: rgba(99,102,241,0.3);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+        .month-pill.active {
+            background: rgba(99,102,241,0.18);
+            border-color: rgba(99,102,241,0.5);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(99,102,241,0.25);
+        }
+        .month-pill .pill-month {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .month-pill.active .pill-month { color: #fff; }
+        .month-pill .pill-count {
+            font-size: 0.7rem;
+            margin-top: 2px;
+        }
+        .month-pill .pill-rate {
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .pill-rate.low { color: #34d399; }
+        .pill-rate.mid { color: #fbbf24; }
+        .pill-rate.high { color: #f87171; }
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .hr-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <div class="hr-nav">
+            <a href="/">← Quay lại Dashboard Backlog</a>
+            <span style="font-size:0.75rem; color:var(--text-secondary);">Dữ liệu từ Google Sheets nội bộ</span>
+        </div>
+
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <div class="logo">👥</div>
+                <div>
+                    <h1>Nhân Sự KCT Đồng Nai</h1>
+                    <div class="subtitle">Tỷ lệ nghỉ việc & Phân tích nhân sự</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="live-indicator">
+                    <div class="live-dot"></div>
+                    <span id="hr-timestamp"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="hr-kpi-grid" id="hr-kpis">
+            <div class="hr-kpi-card">
+                <div class="hr-kpi-label">Tổng nhân viên</div>
+                <div class="hr-kpi-value" id="kpi-total">—</div>
+                <div class="hr-kpi-sub">Từ khi thành lập kho</div>
+            </div>
+            <div class="hr-kpi-card">
+                <div class="hr-kpi-label">Đang làm việc</div>
+                <div class="hr-kpi-value" id="kpi-active">—</div>
+                <div class="hr-kpi-sub">Nhân viên hiện tại</div>
+            </div>
+            <div class="hr-kpi-card">
+                <div class="hr-kpi-label">Đã nghỉ việc</div>
+                <div class="hr-kpi-value" id="kpi-resigned">—</div>
+                <div class="hr-kpi-sub">Tổng cộng tất cả</div>
+            </div>
+            <div class="hr-kpi-card">
+                <div class="hr-kpi-label">Tỷ lệ nghỉ tổng</div>
+                <div class="hr-kpi-value" id="kpi-rate">—</div>
+                <div class="hr-kpi-sub">Nghỉ / Tổng × 100</div>
+            </div>
+            <div class="hr-kpi-card">
+                <div class="hr-kpi-label">Thâm niên TB lúc nghỉ</div>
+                <div class="hr-kpi-value" id="kpi-tenure">—</div>
+                <div class="hr-kpi-sub">Tính bằng tháng (cột L)</div>
+            </div>
+        </div>
+
+        <!-- Monthly Detail Selector -->
+        <div class="chart-panel full-width" style="margin-bottom:1.5rem;" id="month-detail-section">
+            <h3>📅 Chi tiết nghỉ việc theo tháng — click chọn tháng bên dưới</h3>
+            <div id="month-pills" style="
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-bottom: 1.2rem;
+                padding-bottom: 4px;
+            "></div>
+            
+            <!-- Month KPI mini cards -->
+            <div id="month-kpis" style="display:none; margin-bottom:1.2rem;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px;">
+                    <div class="month-mini-card" style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:12px; padding:12px; text-align:center;">
+                        <div style="font-size:0.7rem; color:#60a5fa; text-transform:uppercase; letter-spacing:0.5px;">Đầu tháng</div>
+                        <div id="mk-headcount" style="font-size:1.6rem; font-weight:800; color:#60a5fa;">—</div>
+                        <div style="font-size:0.65rem; color:var(--text-secondary);">người</div>
+                    </div>
+                    <div class="month-mini-card" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:12px; text-align:center;">
+                        <div style="font-size:0.7rem; color:#f87171; text-transform:uppercase; letter-spacing:0.5px;">Nghỉ việc</div>
+                        <div id="mk-resigned" style="font-size:1.6rem; font-weight:800; color:#f87171;">—</div>
+                        <div style="font-size:0.65rem; color:var(--text-secondary);">người</div>
+                    </div>
+                    <div class="month-mini-card" style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:12px; text-align:center;">
+                        <div style="font-size:0.7rem; color:#34d399; text-transform:uppercase; letter-spacing:0.5px;">Tuyển mới</div>
+                        <div id="mk-newhires" style="font-size:1.6rem; font-weight:800; color:#34d399;">—</div>
+                        <div style="font-size:0.65rem; color:var(--text-secondary);">người</div>
+                    </div>
+                    <div class="month-mini-card" style="background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); border-radius:12px; padding:12px; text-align:center;">
+                        <div style="font-size:0.7rem; color:#fbbf24; text-transform:uppercase; letter-spacing:0.5px;">Tỷ lệ nghỉ</div>
+                        <div id="mk-rate" style="font-size:1.6rem; font-weight:800; color:#fbbf24;">—</div>
+                        <div style="font-size:0.65rem; color:var(--text-secondary);">%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Month reason + manager mini charts -->
+            <div id="month-charts" style="display:none; margin-bottom:1.2rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:1rem;">
+                        <h4 style="font-size:0.82rem; color:var(--text-primary); margin:0 0 8px 0;">🍩 Lý do nghỉ</h4>
+                        <div style="height:200px; position:relative;">
+                            <canvas id="monthReasonChart"></canvas>
+                        </div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:1rem;">
+                        <h4 style="font-size:0.82rem; color:var(--text-primary); margin:0 0 8px 0;">👤 Theo quản lý</h4>
+                        <div style="height:200px; position:relative;">
+                            <canvas id="monthManagerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Month employee list -->
+            <div id="month-list" style="display:none;">
+                <h4 style="font-size:0.85rem; color:var(--text-primary); margin:0 0 8px 0;">📋 Danh sách nhân viên nghỉ</h4>
+                <div style="overflow-x:auto;">
+                    <table class="hr-table">
+                        <thead>
+                            <tr>
+                                <th>MSNV</th>
+                                <th>Họ tên</th>
+                                <th>Chức danh</th>
+                                <th>Ngày vào</th>
+                                <th>Ngày nghỉ</th>
+                                <th>Thâm niên</th>
+                                <th>Lý do</th>
+                                <th>Quản lý</th>
+                                <th>Ca</th>
+                            </tr>
+                        </thead>
+                        <tbody id="month-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Empty state -->
+            <div id="month-empty" style="text-align:center; padding:2rem; color:var(--text-secondary); font-size:0.9rem;">
+                👆 Chọn tháng ở trên để xem chi tiết
+            </div>
+        </div>
+
+        <!-- Charts Row 1: Monthly trend + Reason -->
+        <div class="charts-grid">
+            <div class="chart-panel full-width">
+                <h3>📈 Tỷ lệ nghỉ việc theo tháng (%)</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-panel">
+                <h3>🍩 Lý do nghỉ việc</h3>
+                <div class="chart-container">
+                    <canvas id="reasonChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-panel">
+                <h3>👤 Nghỉ việc theo Quản lý</h3>
+                <div class="chart-container">
+                    <canvas id="managerChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-panel">
+                <h3>🕐 Nghỉ việc theo Ca</h3>
+                <div class="chart-container">
+                    <canvas id="shiftChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-panel">
+                <h3>📊 Số lượng nghỉ việc theo tháng</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyCountChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Recent Resignations Table -->
+        <div class="chart-panel" style="margin-bottom:2rem;">
+            <h3>📋 Nghỉ việc gần đây (15 người gần nhất)</h3>
+            <div style="overflow-x:auto;">
+                <table class="hr-table">
+                    <thead>
+                        <tr>
+                            <th>Họ tên</th>
+                            <th>Ngày nghỉ</th>
+                            <th>Lý do</th>
+                            <th>Thâm niên (tháng)</th>
+                            <th>Quản lý</th>
+                            <th>Ca</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const COLORS = {
+            blue: '#3b82f6', green: '#10b981', yellow: '#f59e0b',
+            red: '#ef4444', purple: '#8b5cf6', pink: '#ec4899',
+            cyan: '#06b6d4', orange: '#f97316', indigo: '#6366f1',
+            teal: '#14b8a6', lime: '#84cc16', rose: '#f43f5e'
+        };
+        const PALETTE = Object.values(COLORS);
+
+        Chart.defaults.color = '#8892a8';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+
+        let monthReasonChartInstance = null;
+        let monthManagerChartInstance = null;
+
+        async function loadHRData() {
+            try {
+                const res = await fetch('/api/hr-stats');
+                const data = await res.json();
+                renderKPIs(data);
+                renderMonthlyChart(data.monthlyData);
+                renderMonthlyCountChart(data.monthlyData);
+                renderReasonChart(data.reasonData);
+                renderManagerChart(data.managerData);
+                renderShiftChart(data.shiftData);
+                renderRecentTable(data.recent);
+                populateMonthSelector(data.monthlyData);
+                document.getElementById('hr-timestamp').textContent = new Date().toLocaleTimeString('vi-VN');
+            } catch (err) {
+                console.error('Failed to load HR data:', err);
+            }
+        }
+
+        function populateMonthSelector(monthlyData) {
+            const container = document.getElementById('month-pills');
+            monthlyData.forEach(d => {
+                const rateClass = d.rate < 8 ? 'low' : d.rate < 15 ? 'mid' : 'high';
+                const pill = document.createElement('div');
+                pill.className = 'month-pill';
+                pill.dataset.month = d.month;
+                pill.innerHTML = `
+                    <div class="pill-month">${d.month}</div>
+                    <div class="pill-count">${d.count} người nghỉ</div>
+                    <div class="pill-rate ${rateClass}">${d.rate}%</div>
+                `;
+                pill.addEventListener('click', () => {
+                    container.querySelectorAll('.month-pill').forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    loadMonthDetail(d.month);
+                });
+                container.appendChild(pill);
+            });
+        }
+
+        function hideMonthDetail() {
+            document.getElementById('month-kpis').style.display = 'none';
+            document.getElementById('month-charts').style.display = 'none';
+            document.getElementById('month-list').style.display = 'none';
+            document.getElementById('month-empty').style.display = 'block';
+        }
+
+        async function loadMonthDetail(month) {
+            try {
+                const res = await fetch(`/api/hr-month/${encodeURIComponent(month)}`);
+                const data = await res.json();
+                
+                // Show sections
+                document.getElementById('month-kpis').style.display = 'block';
+                document.getElementById('month-charts').style.display = 'block';
+                document.getElementById('month-list').style.display = 'block';
+                document.getElementById('month-empty').style.display = 'none';
+                
+                // KPIs
+                document.getElementById('mk-headcount').textContent = data.headcount;
+                document.getElementById('mk-resigned').textContent = data.resigned;
+                document.getElementById('mk-newhires').textContent = data.newHires;
+                document.getElementById('mk-rate').textContent = data.rate + '%';
+                
+                // Reason chart
+                if (monthReasonChartInstance) monthReasonChartInstance.destroy();
+                monthReasonChartInstance = new Chart(document.getElementById('monthReasonChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.reasonData.map(d => d.reason),
+                        datasets: [{
+                            data: data.reasonData.map(d => d.count),
+                            backgroundColor: PALETTE.slice(0, data.reasonData.length).map(c => c + 'cc'),
+                            borderColor: 'rgba(0,0,0,0.3)', borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '50%',
+                        plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } }
+                    }
+                });
+                
+                // Manager chart
+                if (monthManagerChartInstance) monthManagerChartInstance.destroy();
+                monthManagerChartInstance = new Chart(document.getElementById('monthManagerChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.managerData.map(d => d.manager),
+                        datasets: [{
+                            data: data.managerData.map(d => d.count),
+                            backgroundColor: [COLORS.blue + 'bb', COLORS.purple + 'bb', COLORS.cyan + 'bb', COLORS.orange + 'bb'],
+                            borderColor: [COLORS.blue, COLORS.purple, COLORS.cyan, COLORS.orange],
+                            borderWidth: 1, borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' } },
+                            y: { grid: { display: false } }
+                        }
+                    }
+                });
+                
+                // Table
+                const tbody = document.getElementById('month-table-body');
+                tbody.innerHTML = data.list.map(e => {
+                    let tagClass = 'other';
+                    const reason = e.reason || 'Không rõ';
+                    if (reason.match(/cho|kho/i)) tagClass = 'fired';
+                    else if (reason.match(/vi|b|ngh|ch|s/i)) tagClass = 'voluntary';
+                    return `<tr>
+                        <td style="color:var(--text-secondary); font-size:0.78rem;">${e.id}</td>
+                        <td style="font-weight:500;">${e.name}</td>
+                        <td style="font-size:0.78rem;">${e.title}</td>
+                        <td>${e.startDate}</td>
+                        <td>${e.resignDate}</td>
+                        <td style="text-align:center;">${e.resignTenure || '—'} th</td>
+                        <td><span class="reason-tag ${tagClass}">${reason}</span></td>
+                        <td>${e.manager}</td>
+                        <td>${e.shiftGroup}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('Failed to load month detail:', err);
+            }
+        }
+
+        function renderKPIs(data) {
+            document.getElementById('kpi-total').textContent = data.total;
+            document.getElementById('kpi-active').textContent = data.active;
+            document.getElementById('kpi-resigned').textContent = data.resigned;
+            document.getElementById('kpi-rate').textContent = data.turnoverRate + '%';
+            document.getElementById('kpi-tenure').textContent = data.avgTenure + ' th';
+        }
+
+        function renderMonthlyChart(monthlyData) {
+            new Chart(document.getElementById('monthlyChart'), {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(d => d.month),
+                    datasets: [{
+                        label: 'Tỷ lệ nghỉ (%)',
+                        data: monthlyData.map(d => d.rate),
+                        borderColor: COLORS.red,
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: COLORS.red,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: (ctx) => {
+                                    const d = monthlyData[ctx.dataIndex];
+                                    return `Nghỉ: ${d.count} người\nĐầu tháng: ${d.headcount} người`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => v + '%' },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMonthlyCountChart(monthlyData) {
+            new Chart(document.getElementById('monthlyCountChart'), {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.map(d => d.month),
+                    datasets: [{
+                        label: 'Số người nghỉ',
+                        data: monthlyData.map(d => d.count),
+                        backgroundColor: monthlyData.map((_, i) => PALETTE[i % PALETTE.length] + '99'),
+                        borderColor: monthlyData.map((_, i) => PALETTE[i % PALETTE.length]),
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderReasonChart(reasonData) {
+            new Chart(document.getElementById('reasonChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: reasonData.map(d => d.reason),
+                    datasets: [{
+                        data: reasonData.map(d => d.count),
+                        backgroundColor: PALETTE.slice(0, reasonData.length).map(c => c + 'cc'),
+                        borderColor: 'rgba(0,0,0,0.3)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { boxWidth: 12, padding: 8, font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderManagerChart(managerData) {
+            new Chart(document.getElementById('managerChart'), {
+                type: 'bar',
+                data: {
+                    labels: managerData.map(d => d.manager),
+                    datasets: [{
+                        label: 'Số người nghỉ',
+                        data: managerData.map(d => d.count),
+                        backgroundColor: [COLORS.blue + 'bb', COLORS.purple + 'bb', COLORS.cyan + 'bb', COLORS.orange + 'bb'],
+                        borderColor: [COLORS.blue, COLORS.purple, COLORS.cyan, COLORS.orange],
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderShiftChart(shiftData) {
+            new Chart(document.getElementById('shiftChart'), {
+                type: 'pie',
+                data: {
+                    labels: shiftData.map(d => d.shift),
+                    datasets: [{
+                        data: shiftData.map(d => d.count),
+                        backgroundColor: [COLORS.blue + 'cc', COLORS.yellow + 'cc', COLORS.purple + 'cc', COLORS.green + 'cc'],
+                        borderColor: 'rgba(0,0,0,0.3)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, padding: 12, font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderRecentTable(recent) {
+            const tbody = document.getElementById('recent-table');
+            tbody.innerHTML = recent.map(r => {
+                let tagClass = 'other';
+                const reason = r.reason || 'Không rõ';
+                if (reason.match(/cho|kho/i)) tagClass = 'fired';
+                else if (reason.match(/vi|b|ngh|ch|s/i)) tagClass = 'voluntary';
+                return `<tr>
+                    <td style="font-weight:500;">${r.name}</td>
+                    <td>${r.resignDate}</td>
+                    <td><span class="reason-tag ${tagClass}">${reason}</span></td>
+                    <td style="text-align:center;">${r.tenure}</td>
+                    <td>${r.manager}</td>
+                    <td>${r.shift}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        loadHRData();
+    </script>
+</body>
+</html>
