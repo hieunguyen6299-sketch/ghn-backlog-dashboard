@@ -252,15 +252,14 @@ app.get('/api/hr-stats', (req, res) => {
                 name: e.name,
                 resignDate: e.resignDate,
                 reason: e.reason,
-                tenure: e.tenure,
+                tenure: e.resignTenure || e.tenure || 0,
                 manager: e.manager,
                 shift: e.shiftGroup
             }));
         
-        // Average tenure of resigned (column L - thâm niên nghỉ việc, tính bằng tháng)
-        const resignedWithTenure = resigned.filter(e => e.resignTenure > 0);
-        const avgTenure = resignedWithTenure.length > 0
-            ? (resignedWithTenure.reduce((sum, e) => sum + e.resignTenure, 0) / resignedWithTenure.length).toFixed(1)
+        // Average tenure of resigned (col L if available, else col J)
+        const avgTenure = resigned.length > 0
+            ? (resigned.reduce((sum, e) => sum + (e.resignTenure || e.tenure || 0), 0) / resigned.length).toFixed(1)
             : 0;
         
         // Average monthly turnover rate
@@ -341,7 +340,7 @@ app.get('/api/hr-month/:month', (req, res) => {
             title: e.title,
             startDate: e.startDate,
             resignDate: e.resignDate,
-            resignTenure: e.resignTenure,
+            resignTenure: e.resignTenure || e.tenure || 0,
             reason: e.reason,
             manager: e.manager,
             shiftGroup: e.shiftGroup
