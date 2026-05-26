@@ -263,9 +263,14 @@ app.get('/api/hr-stats', (req, res) => {
             ? (resignedWithTenure.reduce((sum, e) => sum + e.resignTenure, 0) / resignedWithTenure.length).toFixed(1)
             : 0;
         
+        // Average monthly turnover rate
+        const avgMonthlyRate = monthlyData.length > 0
+            ? (monthlyData.reduce((sum, d) => sum + d.rate, 0) / monthlyData.length).toFixed(1)
+            : 0;
+        
         res.json({
             total, active, resigned: resigned.length,
-            turnoverRate, avgTenure,
+            turnoverRate, avgTenure, avgMonthlyRate: parseFloat(avgMonthlyRate),
             monthlyData, reasonData, managerData, shiftData, recent
         });
     } catch (error) {

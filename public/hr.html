@@ -59,6 +59,7 @@
         .hr-kpi-card:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
         .hr-kpi-card:nth-child(4)::before { background: linear-gradient(90deg, #ef4444, #f87171); }
         .hr-kpi-card:nth-child(5)::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .hr-kpi-card:nth-child(6)::before { background: linear-gradient(90deg, #ec4899, #f472b6); }
         .hr-kpi-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -81,6 +82,7 @@
         .hr-kpi-card:nth-child(3) .hr-kpi-value { color: #fbbf24; }
         .hr-kpi-card:nth-child(4) .hr-kpi-value { color: #f87171; }
         .hr-kpi-card:nth-child(5) .hr-kpi-value { color: #a78bfa; }
+        .hr-kpi-card:nth-child(6) .hr-kpi-value { color: #f472b6; }
         .hr-kpi-sub {
             font-size: 0.7rem;
             color: var(--text-secondary);
@@ -249,6 +251,11 @@
                 <div class="hr-kpi-label">Thâm niên TB lúc nghỉ</div>
                 <div class="hr-kpi-value" id="kpi-tenure">—</div>
                 <div class="hr-kpi-sub">Tính bằng tháng (cột L)</div>
+            </div>
+            <div class="hr-kpi-card">
+                <div class="hr-kpi-label">Tỷ lệ nghỉ TB/tháng</div>
+                <div class="hr-kpi-value" id="kpi-avg-monthly">—</div>
+                <div class="hr-kpi-sub">Trung bình tất cả tháng</div>
             </div>
         </div>
 
@@ -548,6 +555,7 @@
             document.getElementById('kpi-resigned').textContent = data.resigned;
             document.getElementById('kpi-rate').textContent = data.turnoverRate + '%';
             document.getElementById('kpi-tenure').textContent = data.avgTenure + ' th';
+            document.getElementById('kpi-avg-monthly').textContent = data.avgMonthlyRate + '%';
         }
 
         function renderMonthlyChart(monthlyData) {
