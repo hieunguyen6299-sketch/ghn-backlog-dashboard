@@ -23,6 +23,12 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // ============================================================
 
 const authMiddleware = (req, res, next) => {
+    // Bypass auth if REQUIRE_AUTH is explicitly set to false
+    if (process.env.REQUIRE_AUTH === 'false') {
+        req.user = { name: 'Test User', email: 'test@ghn.vn' };
+        return next();
+    }
+
     const token = req.cookies.auth_token;
     if (!token) {
         if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
