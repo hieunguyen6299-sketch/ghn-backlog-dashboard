@@ -54,8 +54,9 @@ app.post('/api/auth/google', async (req, res) => {
         });
         const payload = ticket.getPayload();
         
-        if (!payload.email.endsWith('@ghn.vn')) {
-            return res.status(403).json({ error: 'Chỉ hỗ trợ tài khoản @ghn.vn' });
+        const allowedEmails = ['hieunguyen6299@gmail.com'];
+        if (!payload.email.endsWith('@ghn.vn') && !allowedEmails.includes(payload.email)) {
+            return res.status(403).json({ error: 'Chỉ hỗ trợ tài khoản @ghn.vn hoặc Admin' });
         }
         
         const token = jwt.sign({ email: payload.email, name: payload.name }, JWT_SECRET, { expiresIn: '7d' });
