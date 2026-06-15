@@ -109,9 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>`;
         }).join('');
 
-        // Add total row
-        const totalOrders = categories.reduce((s, c) => s + c.count, 0);
-        const totalPkg = categories.reduce((s, c) => s + c.package_count, 0);
+        // Add total row (excluding 'Đang luân chuyển' because they are not AT KTC)
+        const atKtc = categories.filter(c => c.category !== 'transporting');
+        const totalOrders = atKtc.reduce((s, c) => s + c.count, 0);
+        const totalPkg = atKtc.reduce((s, c) => s + c.package_count, 0);
         tbody.innerHTML += `
         <tr class="summary-total-row">
             <td class="font-bold">Tổng đơn/kiện đang ở KTC</td>
