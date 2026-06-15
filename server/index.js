@@ -1,16 +1,91 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 
 const { fetchBacklogData, transformBacklogData, fetchOrderDetail } = require('./services/ghn-api');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'ghn-secret-super-safe-1234';
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+
+const authMiddleware = (req, res, next) => {
+    const token = req.cookies.auth_token;
+    if (!token) {
+        if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
+        return res.redirect('/login.html');
+    }
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.clearCookie('auth_token');
+        if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Invalid token' });
+        return res.redirect('/login.html');
+    }
+};
+
+app.post('/api/auth/google', async (req, res) => {
+    const { credential } = req.body;
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        if (!payload.email.endsWith('@ghn.vn')) {
+            return res.status(403).json({ error: 'Chỉ hỗ trợ tài khoản @ghn.vn' });
+        }
+        
+        const token = jwt.sign({ email: payload.email, name: payload.name }, JWT_SECRET, { expiresIn: '7d' });
+        res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+        res.json({ success: true, user: payload.name });
+    } catch (err) {
+        console.error('[API] Auth error:', err);
+        res.status(400).json({ error: 'Xác thực Google thất bại' });
+    }
+});
+
+app.get('/api/auth/logout', (req, res) => {
+    res.clearCookie('auth_token');
+    res.redirect('/login.html');
+});
+
+app.get('/api/config/google-client-id', (req, res) => {
+    res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
+});
+
+// Protect Views
+app.get('/', authMiddleware, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+});
+app.get('/hr.html', authMiddleware, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'hr.html'));
+});
+
+// Apply auth middleware to all API endpoints below
+app.use('/api/dashboard', authMiddleware);
+app.use('/api/hr-stats', authMiddleware);
+
 
 const GHN_TOKEN = process.env.GHN_TOKEN;
 const LOCATION_IDS = (process.env.LOCATION_IDS || process.env.WAREHOUSE_ID || '20757000').split(',');

@@ -29,11 +29,15 @@
                     <span class="pulse"></span>
                     <span id="last-update-time">Đang kết nối...</span>
                 </div>
-                <button class="btn btn-primary" id="btn-crawl-now">
+                <button class="btn btn-primary" onclick="refreshData()" id="refresh-btn">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     Refresh Live
                 </button>
-                <a href="/hr.html" class="btn" style="background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); color:#a78bfa; text-decoration:none;">👥 Nhân Sự</a>
+                <a href="/hr.html" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Nhân Sự
+                </a>
+                <a href="/api/auth/logout" class="btn btn-secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">Đăng xuất</a>
             </div>
         </header>
 

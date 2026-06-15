@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - GHN Backlog Dashboard</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+        }
+        .login-container {
+            background: rgba(26, 31, 46, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        .login-title {
+            color: var(--text-light);
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+        }
+        .error-message {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        .g_id_signin {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="login-title">GHN Dashboard</h1>
+        <p class="login-subtitle">Vui lòng đăng nhập bằng tài khoản @ghn.vn</p>
+        
+        <div id="error-msg" class="error-message"></div>
+
+        <div id="g_id_onload"
+            data-client_id="GOOGLE_CLIENT_ID_PLACEHOLDER"
+            data-context="signin"
+            data-ux_mode="popup"
+            data-callback="handleCredentialResponse"
+            data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin"
+            data-type="standard"
+            data-shape="rectangular"
+            data-theme="filled_black"
+            data-text="signin_with"
+            data-size="large"
+            data-logo_alignment="left">
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/config/google-client-id')
+            .then(res => res.json())
+            .then(data => {
+                if(data.clientId) {
+                    const el = document.getElementById('g_id_onload');
+                    el.setAttribute('data-client_id', data.clientId);
+                    google.accounts.id.initialize({
+                        client_id: data.clientId,
+                        callback: handleCredentialResponse
+                    });
+                    google.accounts.id.renderButton(
+                        document.querySelector('.g_id_signin'),
+                        { theme: 'filled_black', size: 'large', text: 'signin_with' }
+                    );
+                }
+            })
+            .catch(err => console.error('Failed to load client ID', err));
+
+        function handleCredentialResponse(response) {
+            const errorDiv = document.getElementById('error-msg');
+            errorDiv.style.display = 'none';
+
+            fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+            .then(result => {
+                if (result.status === 200 && result.body.success) {
+                    window.location.href = '/';
+                } else {
+                    errorDiv.textContent = result.body.error || 'Đăng nhập thất bại';
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                errorDiv.textContent = 'Lỗi kết nối máy chủ';
+                errorDiv.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>

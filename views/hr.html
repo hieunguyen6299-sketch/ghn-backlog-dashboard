@@ -206,9 +206,12 @@
 <body>
     <div class="container">
         <!-- Navigation -->
-        <div class="hr-nav">
-            <a href="/">← Quay lại Dashboard Backlog</a>
-            <span style="font-size:0.75rem; color:var(--text-secondary);">Dữ liệu từ Google Sheets nội bộ</span>
+        <div class="hr-nav" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="/">← Quay lại Dashboard Backlog</a>
+                <span style="font-size:0.75rem; color:var(--text-secondary);">Dữ liệu từ Google Sheets nội bộ</span>
+            </div>
+            <a href="/api/auth/logout" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">Đăng xuất</a>
         </div>
 
         <!-- Header -->
